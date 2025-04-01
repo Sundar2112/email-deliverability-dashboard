@@ -46,7 +46,18 @@ def load_sample_data():
 
 # Function to parse CSV files
 def parse_csv(file):
+    # Print column names to debug
     data = pd.read_csv(file)
+    print(f"Original columns: {data.columns.tolist()}")
+    
+    # Strip whitespace from column names
+    data.columns = data.columns.str.strip()
+    print(f"After stripping whitespace: {data.columns.tolist()}")
+    
+    # Replace any non-ASCII characters
+    data.columns = [c.encode('ascii', 'replace').decode('ascii') for c in data.columns]
+    print(f"After fixing encoding: {data.columns.tolist()}")
+    
     return data
 
 # Function to calculate key metrics
@@ -490,13 +501,23 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Select a page:", ["Client Dashboard", "Add New Client", "Batch Reports"])
     
-    if page == "Client Dashboard":
-        if len(st.session_state.clients) == 0:
-            st.info("No clients added yet. Use the 'Add New Client' page to add client data.")
-        else:
-            # Show dropdown to select client
-            selected_client = st.sidebar.selectbox("Select a client:", list(st.session_state.clients.keys()))
-            display_client_dashboard(selected_client, st.session_state.clients[selected_client])
+if page == "Client Dashboard":
+    if len(st.session_state.clients) == 0:
+        st.info("No clients added yet. Use the 'Add New Client' page to add client data.")
+    else:
+        # Show dropdown to select client
+        selected_client = st.sidebar.selectbox("Select a client:", list(st.session_state.clients.keys()))
+        
+        # Add debug information
+        st.sidebar.write("Debug info:")
+        client_df = st.session_state.clients[selected_client]
+        st.sidebar.write(f"Columns in dataset: {client_df.columns.tolist()}")
+        
+        try:
+            display_client_dashboard(selected_client, client_df)
+        except Exception as e:
+            st.error(f"Error displaying dashboard: {str(e)}")
+            st.write("Please try uploading your data again.")
     
     elif page == "Add New Client":
         st.header("Add New Client Data")
